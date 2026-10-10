@@ -1,0 +1,155 @@
+{
+  "products": [
+    {
+      "id": "prod_1791638744536_urgvn",
+      "name": "kgjg",
+      "price": 2345,
+      "quantity": 100,
+      "description": "lukgfjgfxcgh",
+      "category": "Palm Oil",
+      "imageUrl": "/api/uploads/img_1791638740857_d8641a5487d3.jpeg",
+      "createdAt": "2026-10-10T13:25:44.536Z",
+      "updatedAt": "2026-10-10T13:25:44.536Z"
+    },
+    {
+      "id": "prod_1791491721153_3osb2",
+      "name": "Kenny Super Premium 10L Jerrycan (Delta Sun-Ripened)",
+      "price": 23500,
+      "quantity": 60,
+      "description": "Freshly pressed virgin red palm oil with rich carotene and traditional scent.",
+      "category": "Palm Oil",
+      "imageUrl": "/api/uploads/img_1791491721123_d20ae407a5b8.svg",
+      "createdAt": "2026-10-08T20:35:21.153Z",
+      "updatedAt": "2026-10-08T20:35:21.153Z"
+    },
+    {
+      "id": "prod_1791491519167_x4dqe",
+      "name": "Kenny Special 4 Litres Pure Palm Oil (Edo Harvest)",
+      "price": 9500,
+      "quantity": 45,
+      "description": "Premium unadulterated red palm oil directly from our Edo State community plantation. Rich, fragrant, zero artificial coloring.",
+      "category": "Packaged Palm Oil",
+      "imageUrl": "/api/uploads/img_1791491519123_e8224593ec7a.svg",
+      "createdAt": "2026-10-08T20:31:59.167Z",
+      "updatedAt": "2026-10-08T20:31:59.167Z"
+    },
+    {
+      "id": "prod_1l",
+      "name": "1 Litre Palm Oil (Food Grade Bottle)",
+      "price": 2500,
+      "description": "Pure, fresh, unadulterated red palm oil in a sealed 1-litre tamper-proof bottle. Deep natural red color, zero odor, high smoking point. Perfect for everyday home cooking.",
+      "category": "Packaged Palm Oil",
+      "imageUrl": "/api/uploads/sample_1l.svg",
+      "createdAt": "2026-10-07T11:00:24.617Z",
+      "updatedAt": "2026-10-07T11:00:24.617Z"
+    },
+    {
+      "id": "prod_2l",
+      "name": "2 Litres Palm Oil (Family Size)",
+      "price": 4800,
+      "description": "Freshly tapped and milled palm oil directly from our village presses. Rich in vitamin E and beta-carotene with authentic Nigerian aroma. Sealed with safety cap.",
+      "category": "Packaged Palm Oil",
+      "imageUrl": "/api/uploads/sample_2l.svg",
+      "createdAt": "2026-10-07T11:00:24.617Z",
+      "updatedAt": "2026-10-07T11:00:24.617Z"
+    },
+    {
+      "id": "prod_5l",
+      "name": "5 Litres Palm Oil (Kitchen Keg)",
+      "price": 11500,
+      "description": "Durable 5L heavy-duty food-safe container with pour spout and carry handle. Thick consistency, pure sedimentation-free palm oil for family soups, stews, and frying.",
+      "category": "Palm Oil",
+      "imageUrl": "/api/uploads/sample_5l.svg",
+      "createdAt": "2026-10-07T11:00:24.617Z",
+      "updatedAt": "2026-10-07T11:00:24.617Z"
+    },
+    {
+      "id": "prod_10l",
+      "name": "10 Litres Palm Oil (Catering Keg)",
+      "price": 22000,
+      "description": "10L keg of unrefined virgin red palm oil. Preferred by caterers, restaurants, and large families for its natural richness, zero chemical additives, and long shelf life.",
+      "category": "Palm Oil",
+      "imageUrl": "/api/uploads/sample_10l.svg",
+      "createdAt": "2026-10-07T11:00:24.617Z",
+      "updatedAt": "2026-10-07T11:00:24.617Z"
+    },
+    {
+      "id": "prod_25l",
+      "name": "25 Litres Palm Oil (Commercial Jerrycan)",
+      "price": 52000,
+      "description": "Standard 25L commercial yellow jerrycan. Milled under hygienic conditions from ripe Elaeis guineensis palm fruit bunches. Unbeatable commercial value and premium quality.",
+      "category": "Bulk Palm Oil",
+      "imageUrl": "/api/uploads/sample_25l.svg",
+      "createdAt": "2026-10-07T11:00:24.617Z",
+      "updatedAt": "2026-10-07T11:00:24.617Z"
+    },
+    {
+      "id": "prod_50l",
+      "name": "50 Litres Palm Oil (Double Bulk Kegs)",
+      "price": 100000,
+      "description": "Wholesale package consisting of two 25L commercial containers (50 Litres total). Guaranteed pure with thick red consistency. Highly sought after by market retailers.",
+      "category": "Bulk Palm Oil",
+      "imageUrl": "/api/uploads/sample_50l.svg",
+      "createdAt": "2026-10-07T11:00:24.617Z",
+      "updatedAt": "2026-10-07T11:00:24.617Z"
+    },
+    {
+      "id": "prod_bulk_drum",
+      "name": "Bulk Palm Oil (200 Litres Industrial Drum)",
+      "price": 380000,
+      "description": "Heavy gauge steel/plastic 200L drum of unadulterated oil for industrial food processors, wholesale distributors, soap manufacturers, and large-scale catering operations.",
+      "category": "Bulk Palm Oil",
+      "imageUrl": "/api/uploads/sample_drum.svg",
+      "createdAt": "2026-10-07T11:00:24.617Z",
+      "updatedAt": "2026-10-07T11:00:24.617Z"
+    }
+  ],
+  "orders": [
+    {
+      "orderId": "PO-66366",
+      "customerName": "Amina Bello",
+      "customerLocation": "Ikeja, Lagos State",
+      "customerWhatsApp": "08023456789",
+      "items": [
+        {
+          "id": "prod_1l",
+          "name": "1 Litre Palm Oil (Food Grade Bottle)",
+          "price": 2500,
+          "quantity": 2,
+          "imageUrl": "/api/uploads/sample_1l.svg"
+        }
+      ],
+      "total": 5000,
+      "paymentStatus": "Pending",
+      "orderStatus": "Pending",
+      "createdAt": "2026-10-10T13:57:04.141Z"
+    }
+  ],
+  "settings": {
+    "businessName": "Kenny's Premium Palm Oil",
+    "banner": "/api/uploads/img_1791640231141_a15656fbdedb.jpeg",
+    "bannerSubtitle": "100% Unadulterated, Freshly Milled Nigerian Red Palm Oil from Edo & Delta Plantations",
+    "whatsappName": "Oroma Sales & Orders Desk",
+    "whatsappNumber": "2348031234567",
+    "bankName": "Zenith Bank PLC",
+    "accountName": "Oroma Palm Oil Ventures",
+    "accountNumber": "1018942365"
+  },
+  "admin": {
+    "username": "admin",
+    "passwordHash": "53b1630a80b48615d851a9c21f77353940911fb08b3938393a5bbcead1a6e57a",
+    "sessions": [
+      "adm_11b1351237d38054ca1b37e92780b42bea46782cad9e255d",
+      "adm_f865c28c8ff6218062d412f5217f58c8e5c0c83b1053ca8e",
+      "adm_a3d2819dce19d65d06aa245cc80817f477e507b3bd862855",
+      "adm_1791488590990_9666e977e60ca1a5b34102a670d7f49c.98348f6bc86fc9a27e6e6f79e319ad2f7e2f906472ea9182deeea5f6c5dae6bc",
+      "adm_1791488643558_57d2c39ce3e863a88f0a8c39c9630193.6a096bccd3de81eb0fe4c9603effca8239a6aa47c257662215756830be2d9e87",
+      "adm_1791490517927_631cc6fa7b125fe55ccd0090c72eb3b1.909b76fff3ff1f880ba1953ea65b29b95eb1560400aa8a9dd030aeae1f910d0b",
+      "adm_1791491518748_679bae13ff3a9e57cc3c706c54e6a839.8e30a4a50a70c72712bac4c909197a2db0b3c11726898a6e916855572fcc63d2",
+      "adm_1791491720640_f40afc3d734ab1a4641c1d4490d3e0c8.26b0015bc80a3365e40debce183b348e63b07cac28719cd4c8b79ddd37f2f610",
+      "adm_1791638016394_841370cfbb15b5dc15c8c634700e977b.ed946e9e591e2b2eda2d17b129c4879f9d2fa070f537562bd9d1a3a7e87441cb",
+      "adm_1791638195654_0123835b00f8d032ad0394472c478300.e48baec91ad922e8869310dbf588f13547a6ac67affe81c7fd20435fc0bedfad",
+      "adm_1791640557897_9990cad697067f9ad1f7076cf100d1a9.2390a6e89968358be1949c2555a1bf13a13d05d5e304637602c5914a63c5f84f"
+    ]
+  }
+}

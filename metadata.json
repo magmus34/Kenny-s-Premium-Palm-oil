@@ -1,0 +1,6 @@
+{
+  "name": "Oroma Palm Oil Store",
+  "description": "Premium pure and unadulterated Nigerian palm oil online store with guest checkout and store management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
