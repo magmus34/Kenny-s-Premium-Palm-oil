@@ -1,13 +1,14 @@
 'use client';
 
 import React from 'react';
-import { CartItem } from '@/lib/types';
-import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
+import { CartItem, Product } from '@/lib/types';
+import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, AlertCircle } from 'lucide-react';
 
 interface CartDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   cart: CartItem[];
+  availableProducts?: Product[];
   onUpdateQuantity: (id: string, delta: number) => void;
   onRemoveItem: (id: string) => void;
   onClearCart: () => void;
@@ -18,6 +19,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   isOpen,
   onClose,
   cart,
+  availableProducts,
   onUpdateQuantity,
   onRemoveItem,
   onClearCart,
@@ -25,8 +27,27 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const totalUnits = cart.reduce((sum, item) => sum + item.quantity, 0);
+  // Validate items against authoritative available products if available
+  const validatedCartItems = cart.map((item) => {
+    const liveProd = availableProducts?.find((p) => p.id === item.id);
+    const isUnavailable = Boolean(availableProducts && (!liveProd || liveProd.isPublished === false));
+    const currentPrice = liveProd ? liveProd.price : item.price;
+    return {
+      ...item,
+      price: currentPrice,
+      isUnavailable,
+    };
+  });
+
+  const hasUnavailableItems = validatedCartItems.some((item) => item.isUnavailable);
+  const total = validatedCartItems.reduce(
+    (sum, item) => sum + (item.isUnavailable ? 0 : item.price * item.quantity),
+    0
+  );
+  const totalUnits = validatedCartItems.reduce(
+    (sum, item) => sum + (item.isUnavailable ? 0 : item.quantity),
+    0
+  );
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden animate-in fade-in duration-200">
@@ -49,7 +70,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-200 transition-colors"
+              className="p-1.5 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-200 transition-colors cursor-pointer"
               aria-label="Close cart"
             >
               <X className="w-5 h-5" />
@@ -69,28 +90,39 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </p>
                 <button
                   onClick={onClose}
-                  className="mt-6 px-6 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-all shadow-md shadow-orange-600/20"
+                  className="mt-6 px-6 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-all shadow-md shadow-orange-600/20 cursor-pointer"
                 >
                   Start Shopping
                 </button>
               </div>
             ) : (
               <div className="space-y-4">
+                {hasUnavailableItems && (
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Some items in your cart are no longer available in the store. Please remove them to proceed.</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center text-xs text-stone-500 pb-1">
                   <span>Selected Products</span>
                   <button
                     onClick={onClearCart}
-                    className="text-stone-400 hover:text-red-600 text-xs flex items-center gap-1 transition-colors"
+                    className="text-stone-400 hover:text-red-600 text-xs flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Clear Cart</span>
                   </button>
                 </div>
 
-                {cart.map((item) => (
+                {validatedCartItems.map((item) => (
                   <div
                     key={item.id}
-                    className="p-3 bg-stone-50/70 hover:bg-stone-50 rounded-2xl border border-stone-200/80 flex gap-3 transition-colors"
+                    className={`p-3 rounded-2xl border flex gap-3 transition-colors ${
+                      item.isUnavailable
+                        ? 'bg-red-50/50 border-red-200'
+                        : 'bg-stone-50/70 hover:bg-stone-50 border-stone-200/80'
+                    }`}
                   >
                     {/* Thumbnail */}
                     <div className="w-16 h-16 rounded-xl bg-white p-1 border border-stone-100 flex items-center justify-center shrink-0">
@@ -109,12 +141,19 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     {/* Details */}
                     <div className="flex-1 min-w-0 flex flex-col justify-between">
                       <div className="flex justify-between items-start gap-1">
-                        <h4 className="text-xs sm:text-sm font-bold text-stone-900 truncate">
-                          {item.name}
-                        </h4>
+                        <div>
+                          <h4 className="text-xs sm:text-sm font-bold text-stone-900 truncate">
+                            {item.name}
+                          </h4>
+                          {item.isUnavailable && (
+                            <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">
+                              Item Removed or Unavailable
+                            </span>
+                          )}
+                        </div>
                         <button
                           onClick={() => onRemoveItem(item.id)}
-                          className="text-stone-400 hover:text-red-500 p-0.5"
+                          className="text-stone-400 hover:text-red-500 p-0.5 cursor-pointer"
                           title="Remove product"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -126,31 +165,40 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       </div>
 
                       {/* Quantity & Subtotal */}
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="flex items-center border border-stone-300 rounded-lg bg-white overflow-hidden shadow-2xs">
-                          <button
-                            onClick={() => onUpdateQuantity(item.id, -1)}
-                            className="px-2 py-0.5 text-stone-600 hover:bg-stone-100 transition-colors"
-                            aria-label="Decrease quantity"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="px-2.5 py-0.5 text-xs font-bold text-stone-800">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => onUpdateQuantity(item.id, 1)}
-                            className="px-2 py-0.5 text-stone-600 hover:bg-stone-100 transition-colors"
-                            aria-label="Increase quantity"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
+                      {!item.isUnavailable ? (
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="flex items-center border border-stone-300 rounded-lg bg-white overflow-hidden shadow-2xs">
+                            <button
+                              onClick={() => onUpdateQuantity(item.id, -1)}
+                              className="px-2 py-0.5 text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                              aria-label="Decrease quantity"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="px-2.5 py-0.5 text-xs font-bold text-stone-800">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => onUpdateQuantity(item.id, 1)}
+                              className="px-2 py-0.5 text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                              aria-label="Increase quantity"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
 
-                        <span className="text-xs font-black text-stone-900">
-                          ₦{(item.price * item.quantity).toLocaleString()}
-                        </span>
-                      </div>
+                          <span className="text-xs font-black text-stone-900">
+                            ₦{(item.price * item.quantity).toLocaleString()}
+                          </span>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => onRemoveItem(item.id)}
+                          className="mt-2 text-xs font-bold text-red-600 hover:underline text-left cursor-pointer"
+                        >
+                          Click to remove from cart
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -184,7 +232,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
               <button
                 onClick={onProceedToCheckout}
-                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold shadow-lg shadow-orange-600/25 transition-all active:scale-[0.99] cursor-pointer"
+                disabled={hasUnavailableItems}
+                className={`w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold transition-all ${
+                  hasUnavailableItems
+                    ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                    : 'bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white shadow-lg shadow-orange-600/25 active:scale-[0.99] cursor-pointer'
+                }`}
               >
                 <span>Proceed to Guest Checkout</span>
                 <ArrowRight className="w-4 h-4" />

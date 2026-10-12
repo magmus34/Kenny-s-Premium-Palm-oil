@@ -149,6 +149,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setTimeout(() => setErrorMessage(null), 6000);
   };
 
+  const notifyStoreSync = useCallback(() => {
+    try {
+      if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
+        const channel = new BroadcastChannel('oroma_store_sync');
+        channel.postMessage({ type: 'SYNC_PRODUCTS', timestamp: Date.now() });
+        channel.close();
+      }
+    } catch {}
+  }, []);
+
   const fetchStorageAudit = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/storage-status', {
@@ -429,6 +439,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       }
       setBannerSuccess(msg);
       showSuccess(msg);
+      notifyStoreSync();
       fetchStorageAudit();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Banner upload failed';
@@ -481,6 +492,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       const msg = `Applied "${presetName}" banner and saved to store!`;
       setBannerSuccess(msg);
       showSuccess(msg);
+      notifyStoreSync();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to update banner';
       setBannerError(msg);
@@ -604,6 +616,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         showSuccess(`New product "${data.product.name}" created and saved to database!`);
       }
 
+      notifyStoreSync();
       setIsProductModalOpen(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to save product';
@@ -634,6 +647,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       }
 
       setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
+      notifyStoreSync();
       showSuccess(`Product "${productToDelete.name}" deleted.`);
       setProductToDelete(null);
     } catch (err: unknown) {

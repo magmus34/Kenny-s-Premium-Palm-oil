@@ -19,6 +19,13 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
 }) => {
   const [imageError, setImageError] = useState(false);
 
+  // Reset error whenever image URL changes
+  React.useEffect(() => {
+    setImageError(false);
+  }, [product.imageUrl, product.id]);
+
+  const targetImage = product.imageUrl || '/api/uploads/sample_1l.svg';
+
   return (
     <div className="group bg-white rounded-2xl border border-stone-200/90 hover:border-orange-300 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden">
       {/* Product Image Area */}
@@ -28,10 +35,11 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
       >
         {!imageError ? (
           <img
-            src={product.imageUrl || '/api/uploads/sample_1l.svg'}
+            key={targetImage}
+            src={targetImage}
             alt={product.name}
             className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
+            decoding="async"
             onError={() => setImageError(true)}
           />
         ) : (
@@ -40,7 +48,7 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
               <ImageOff className="w-6 h-6" />
             </div>
             <p className="text-xs font-semibold text-stone-700">{product.name}</p>
-            <span className="text-[10px] text-stone-400 mt-1">Photo update pending</span>
+            <span className="text-[10px] text-stone-400 mt-1">Photo pending re-upload</span>
           </div>
         )}
 

@@ -199,17 +199,41 @@ export function StoreFront({ initialProducts, initialSettings, initialDbError = 
     window.addEventListener('focus', handleFocusSync);
     window.addEventListener('visibilitychange', handleFocusSync);
 
-    // 3. Smooth background poll every 6 seconds for instant cross-device and admin sync
+    // 3. Instant cross-tab sync when admin makes changes in another tab
+    let broadcastChannel: BroadcastChannel | null = null;
+    try {
+      if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
+        broadcastChannel = new BroadcastChannel('oroma_store_sync');
+        broadcastChannel.onmessage = () => {
+          if (isMounted) {
+            performSync();
+          }
+        };
+      }
+    } catch {}
+
+    // 4. Background poll every 15 seconds for cross-device synchronization
     const interval = setInterval(() => {
-      if (isMounted && typeof window !== 'undefined' && window.navigator.onLine && typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      if (
+        isMounted &&
+        typeof window !== 'undefined' &&
+        window.navigator.onLine &&
+        typeof document !== 'undefined' &&
+        document.visibilityState === 'visible'
+      ) {
         performSync();
       }
-    }, 6000);
+    }, 15000);
 
     return () => {
       isMounted = false;
       window.removeEventListener('focus', handleFocusSync);
       window.removeEventListener('visibilitychange', handleFocusSync);
+      if (broadcastChannel) {
+        try {
+          broadcastChannel.close();
+        } catch {}
+      }
       clearInterval(interval);
     };
   }, []);

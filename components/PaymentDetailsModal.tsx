@@ -185,14 +185,14 @@ export const PaymentDetailsModal: React.FC<PaymentDetailsModalProps> = ({
               <div className="flex justify-between items-center text-xs">
                 <span className="text-stone-500 font-medium">Bank Name:</span>
                 <span className="font-bold text-stone-900 text-sm">
-                  {settings.bankName || 'Zenith Bank PLC'}
+                  {settings.bankName || 'Opay'}
                 </span>
               </div>
 
               <div className="flex justify-between items-center text-xs">
                 <span className="text-stone-500 font-medium">Account Name:</span>
                 <span className="font-bold text-stone-900 text-sm">
-                  {settings.accountName || 'Oroma Palm Oil Ventures'}
+                  {settings.accountName || 'Samson Kehinde Favour'}
                 </span>
               </div>
 
@@ -201,7 +201,7 @@ export const PaymentDetailsModal: React.FC<PaymentDetailsModalProps> = ({
                 <div>
                   <span className="text-xs text-stone-500 block">Account Number:</span>
                   <span className="text-xl sm:text-2xl font-mono font-black text-orange-700 tracking-wider">
-                    {settings.accountNumber || '1018942365'}
+                    {settings.accountNumber || '7014685873'}
                   </span>
                 </div>
 

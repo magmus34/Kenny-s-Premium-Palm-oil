@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllProducts, createProduct, isValidAdminSession, extractTokenFromRequest } from '@/lib/db';
+import {
+  fetchProductsAsync,
+  createProductAsync,
+  isValidAdminSession,
+  extractTokenFromRequest,
+} from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -8,7 +13,10 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const includeAll = searchParams.get('all') === 'true';
-    const products = getAllProducts(includeAll);
+
+    // Single authoritative database fetch from Firestore
+    const products = await fetchProductsAsync(includeAll);
+
     return NextResponse.json(
       { success: true, products },
       {
@@ -21,6 +29,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to fetch products';
+    console.error('Error in GET /api/products:', err);
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
@@ -30,7 +39,10 @@ export async function POST(request: NextRequest) {
     const token = extractTokenFromRequest(request);
 
     if (!isValidAdminSession(token)) {
-      return NextResponse.json({ success: false, error: 'Unauthorized: Admin session expired. Please log in again.' }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Admin session expired. Please log in again.' },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
@@ -44,7 +56,10 @@ export async function POST(request: NextRequest) {
     const cleanedPriceStr = String(price ?? '').replace(/[^0-9.]/g, '');
     const numericPrice = Number(cleanedPriceStr);
     if (isNaN(numericPrice) || numericPrice <= 0) {
-      return NextResponse.json({ success: false, error: 'A valid price greater than ₦0 is required' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'A valid price greater than ₦0 is required' },
+        { status: 400 }
+      );
     }
 
     // Parse quantity
@@ -56,19 +71,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Default image if none provided
-    const finalImageUrl = (imageUrl && typeof imageUrl === 'string' && imageUrl.trim()) 
-      ? imageUrl.trim() 
-      : '/api/uploads/sample_5l.svg';
+    const finalImageUrl =
+      imageUrl && typeof imageUrl === 'string' && imageUrl.trim()
+        ? imageUrl.trim()
+        : '/api/uploads/sample_5l.svg';
 
     // Safety check: do NOT allow raw bulky base64 data to be saved as the imageUrl
     if (finalImageUrl.startsWith('data:image/')) {
-      return NextResponse.json({
-        success: false,
-        error: 'Raw base64 images cannot be saved directly. Please use the image upload button to upload the image file properly.',
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Raw base64 images cannot be saved directly. Please use the image upload button to upload the image file properly.',
+        },
+        { status: 400 }
+      );
     }
 
-    const newProduct = createProduct({
+    const newProduct = await createProductAsync({
       name: name.trim(),
       price: numericPrice,
       quantity: finalQuantity,

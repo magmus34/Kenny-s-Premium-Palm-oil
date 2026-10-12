@@ -22,6 +22,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const [selectedQty, setSelectedQty] = useState<number>(1);
   const [imageError, setImageError] = useState<boolean>(false);
 
+  React.useEffect(() => {
+    setImageError(false);
+    setSelectedQty(1);
+  }, [product?.id, product?.imageUrl]);
+
   if (!product) return null;
 
   const handleProceedToCheckout = () => {

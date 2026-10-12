@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  getAllOrders,
-  createOrder,
-  getProductById,
-  getStoreSettings,
-  isValidAdminSession,
-  extractTokenFromRequest,
-  OrderItem,
-} from '@/lib/db';
+  getFirestoreOrders,
+  createFirestoreOrder,
+  getFirestoreProductById,
+  getFirestoreSettings,
+} from '@/lib/firestore-db';
+import { isValidAdminSession, extractTokenFromRequest, OrderItem, Order } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,8 +18,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized: Admin session required' }, { status: 401 });
     }
 
-    const orders = getAllOrders();
-    return NextResponse.json({ success: true, orders });
+    const orders = await getFirestoreOrders();
+    return NextResponse.json(
+      { success: true, orders },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
+    );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to fetch orders';
     return NextResponse.json({ success: false, error: message }, { status: 500 });
@@ -60,11 +68,20 @@ export async function POST(request: NextRequest) {
         }, { status: 400 });
       }
 
-      // Look up current product in authoritative database to prevent client tampering
-      const dbProduct = item.id ? getProductById(String(item.id)) : null;
-      const trustedPrice = dbProduct ? dbProduct.price : Number(item.price);
-      const trustedName = dbProduct ? dbProduct.name : String(item.name || 'Palm Oil');
-      const trustedImage = dbProduct ? dbProduct.imageUrl : String(item.imageUrl || '');
+      // Look up current product in authoritative Firestore database
+      const dbProduct = item.id ? await getFirestoreProductById(String(item.id)) : null;
+
+      // Ensure product still exists and is published
+      if (!dbProduct || dbProduct.isPublished === false) {
+        return NextResponse.json({
+          success: false,
+          error: `Product "${item.name || 'Selected item'}" is no longer available or was removed from the store. Please refresh your cart.`,
+        }, { status: 400 });
+      }
+
+      const trustedPrice = dbProduct.price;
+      const trustedName = dbProduct.name;
+      const trustedImage = dbProduct.imageUrl;
 
       if (isNaN(trustedPrice) || trustedPrice <= 0) {
         return NextResponse.json({
@@ -85,30 +102,31 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 3. Save order to database
-    const savedOrder = createOrder({
+    const orderId = 'PO-' + Math.floor(10000 + Math.random() * 90000);
+    const now = new Date().toISOString();
+
+    const newOrder: Order = {
+      orderId,
       customerName: customerName.trim(),
       customerLocation: customerLocation.trim(),
       customerWhatsApp: customerWhatsApp.trim(),
       items: validatedItems,
       total: calculatedTotal,
-    });
+      paymentStatus: 'Pending',
+      orderStatus: 'Pending',
+      createdAt: now,
+    };
 
-    if (!savedOrder || !savedOrder.orderId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Failed to record order in database. Please try again.',
-      }, { status: 500 });
-    }
+    // 3. Save order to Firestore
+    const savedOrder = await createFirestoreOrder(newOrder);
 
-    // 4. Retrieve current store settings for WhatsApp formatting
-    const settings = getStoreSettings();
+    // 4. Retrieve current store settings from Firestore for WhatsApp formatting
+    const settings = await getFirestoreSettings();
     const formattedDate = new Date(savedOrder.createdAt).toLocaleString('en-NG', {
       dateStyle: 'medium',
       timeStyle: 'short',
     });
 
-    // Format products list for WhatsApp per exact spec
     const itemsListText = savedOrder.items
       .map(
         (it) =>
@@ -144,10 +162,8 @@ Account Number: ${settings.accountNumber}
 
 Please confirm my palm oil order.`;
 
-    // Sanitize store owner's WhatsApp number (must be international format without +, spaces or dashes)
     let phone = settings.whatsappNumber.replace(/[^0-9]/g, '');
     if (phone.startsWith('0') && phone.length === 11) {
-      // e.g. Nigerian 080... -> 23480...
       phone = '234' + phone.substring(1);
     }
 

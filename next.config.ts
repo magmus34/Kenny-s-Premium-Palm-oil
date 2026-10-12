@@ -31,11 +31,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  output: process.env.VERCEL ? undefined : 'standalone',
-  outputFileTracingIncludes: {
-    '/api/uploads/[filename]': ['./data/uploads/**/*', './public/**/*'],
-    '/api/**/*': ['./data/**/*', './public/**/*'],
-  },
+
   transpilePackages: ['motion'],
   webpack: (config, {dev}) => {
     // HMR is disabled in AI Studio via DISABLE_HMR env var.

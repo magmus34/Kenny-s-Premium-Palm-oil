@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStoreSettings, updateStoreSettings, isValidAdminSession, extractTokenFromRequest } from '@/lib/db';
+import {
+  fetchStoreSettingsAsync,
+  updateStoreSettingsAsync,
+  isValidAdminSession,
+  extractTokenFromRequest,
+} from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
   try {
-    const settings = getStoreSettings();
+    const settings = await fetchStoreSettingsAsync();
     return NextResponse.json(
       { success: true, settings },
       {
@@ -94,7 +99,7 @@ export async function PUT(request: NextRequest) {
       updates.accountNumber = accountNumber.trim();
     }
 
-    const updated = updateStoreSettings(updates);
+    const updated = await updateStoreSettingsAsync(updates);
     return NextResponse.json({ success: true, settings: updated });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to update store settings';

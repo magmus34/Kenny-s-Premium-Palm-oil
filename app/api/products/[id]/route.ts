@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProductById, updateProduct, deleteProduct, isValidAdminSession, extractTokenFromRequest } from '@/lib/db';
+import {
+  getProductById,
+  updateProductAsync,
+  deleteProductAsync,
+  isValidAdminSession,
+  extractTokenFromRequest,
+} from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -96,7 +102,7 @@ export async function PUT(
       updates.sortOrder = isNaN(sNum) ? 0 : sNum;
     }
 
-    const updated = updateProduct(id, updates);
+    const updated = await updateProductAsync(id, updates);
     return NextResponse.json({ success: true, product: updated });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to update product';
@@ -117,7 +123,7 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const deleted = deleteProduct(id);
+    const deleted = await deleteProductAsync(id);
     if (!deleted) {
       return NextResponse.json({ success: false, error: 'Product not found or already deleted' }, { status: 404 });
     }

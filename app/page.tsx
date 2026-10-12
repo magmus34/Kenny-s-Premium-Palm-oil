@@ -1,4 +1,4 @@
-import { getAllProducts, getStoreSettings } from '@/lib/db';
+import { fetchProductsAsync, fetchStoreSettingsAsync } from '@/lib/db';
 import { StoreFront } from '@/components/StoreFront';
 import { Product, StoreSettings } from '@/lib/types';
 
@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
-export default function HomePage() {
+export default async function HomePage() {
   let products: Product[] = [];
   let settings: StoreSettings = {
     businessName: "Kenny's Premium Palm oil",
@@ -21,10 +21,14 @@ export default function HomePage() {
   let initialDbError = false;
 
   try {
-    products = getAllProducts();
-    settings = getStoreSettings();
+    const [fetchedProducts, fetchedSettings] = await Promise.all([
+      fetchProductsAsync(false),
+      fetchStoreSettingsAsync(),
+    ]);
+    products = fetchedProducts;
+    settings = fetchedSettings;
   } catch (err) {
-    console.error('Database read error in HomePage:', err);
+    console.error('Database read error in HomePage SSR:', err);
     initialDbError = true;
   }
 
