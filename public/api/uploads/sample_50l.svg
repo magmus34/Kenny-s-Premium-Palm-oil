@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+      <rect width="500" height="500" fill="#fff7ed" />
+      <circle cx="250" cy="250" r="190" fill="#ffedd5" />
+      <!-- Two 25L Jerrycans side by side -->
+      <g transform="translate(-50, 0)">
+        <rect x="120" y="150" width="190" height="270" rx="18" fill="#eab308" />
+        <rect x="190" y="95" width="60" height="55" rx="8" fill="#ca8a04" />
+        <rect x="135" y="110" width="45" height="40" rx="5" fill="#ea580c" />
+      </g>
+      <g transform="translate(110, 20)">
+        <rect x="120" y="140" width="190" height="260" rx="18" fill="#facc15" stroke="#ca8a04" stroke-width="4" />
+        <rect x="190" y="85" width="60" height="55" rx="8" fill="#ca8a04" />
+        <rect x="135" y="100" width="45" height="40" rx="5" fill="#ea580c" />
+      </g>
+      <!-- Center badge -->
+      <circle cx="250" cy="290" r="75" fill="#ffffff" stroke="#ea580c" stroke-width="5" />
+      <text x="250" y="275" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#ea580c">2x 25L KEGS</text>
+      <text x="250" y="315" text-anchor="middle" font-family="system-ui, sans-serif" font-size="34" font-weight="900" fill="#9a3412">50L</text>
+      <text x="250" y="338" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="#c2410c">BULK VALUE</text>
+    </svg>

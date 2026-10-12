@@ -34,16 +34,29 @@ export interface AdminCredentials {
   sessions: string[]; // Active session tokens
 }
 
+export interface UploadedImageData {
+  contentType: string;
+  data: string; // base64 encoded
+  size?: number;
+  updatedAt?: string;
+}
+
 interface DatabaseSchema {
   products: Product[];
   orders: Order[];
   settings: StoreSettings;
   admin: AdminCredentials;
+  uploadedImages?: Record<string, UploadedImageData>;
 }
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 export const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
+
+// Public static directories for Next.js and Vercel CDN static file serving
+export const PUBLIC_DIR = path.join(process.cwd(), 'public');
+export const PUBLIC_UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
+export const PUBLIC_API_UPLOADS_DIR = path.join(PUBLIC_DIR, 'api', 'uploads');
 
 // Safe writable directory for serverless environments (e.g. Vercel, AWS Lambda)
 export const TMP_DIR = path.join(os.tmpdir(), 'palm_oil_data');
@@ -62,6 +75,22 @@ function ensureDirectories() {
   try {
     if (!fs.existsSync(UPLOADS_DIR)) {
       fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    }
+  } catch {
+    // Read-only filesystem, ignore
+  }
+
+  try {
+    if (!fs.existsSync(PUBLIC_UPLOADS_DIR)) {
+      fs.mkdirSync(PUBLIC_UPLOADS_DIR, { recursive: true });
+    }
+  } catch {
+    // Read-only filesystem, ignore
+  }
+
+  try {
+    if (!fs.existsSync(PUBLIC_API_UPLOADS_DIR)) {
+      fs.mkdirSync(PUBLIC_API_UPLOADS_DIR, { recursive: true });
     }
   } catch {
     // Read-only filesystem, ignore
@@ -885,4 +914,30 @@ export function changeAdminPassword(oldPassword: string, newPassword: string): b
   db.admin.sessions = []; // Revoke previous sessions on password change
   saveDatabase(db);
   return true;
+}
+
+export function saveUploadedImage(filename: string, contentType: string, buffer: Buffer): void {
+  const db = getDatabase();
+  if (!db.uploadedImages) {
+    db.uploadedImages = {};
+  }
+  db.uploadedImages[filename] = {
+    contentType,
+    data: buffer.toString('base64'),
+    size: buffer.length,
+    updatedAt: new Date().toISOString(),
+  };
+  saveDatabase(db);
+}
+
+export function getUploadedImage(filename: string): { contentType: string; buffer: Buffer } | null {
+  const db = getDatabase();
+  const item = db.uploadedImages?.[filename];
+  if (item && item.data) {
+    return {
+      contentType: item.contentType || 'image/jpeg',
+      buffer: Buffer.from(item.data, 'base64'),
+    };
+  }
+  return null;
 }

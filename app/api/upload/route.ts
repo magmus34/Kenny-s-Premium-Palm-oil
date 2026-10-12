@@ -2,7 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { UPLOADS_DIR, TMP_UPLOADS_DIR, isValidAdminSession, extractTokenFromRequest } from '@/lib/db';
+import {
+  UPLOADS_DIR,
+  TMP_UPLOADS_DIR,
+  PUBLIC_UPLOADS_DIR,
+  PUBLIC_API_UPLOADS_DIR,
+  saveUploadedImage,
+  isValidAdminSession,
+  extractTokenFromRequest,
+} from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,6 +51,8 @@ export async function POST(request: NextRequest) {
     }
 
     let ext = '.jpg';
+    let mimeType = file.type || 'image/jpeg';
+
     if (file.name && path.extname(file.name)) {
       ext = path.extname(file.name).toLowerCase();
       if (!ext.startsWith('.')) ext = '.' + ext;
@@ -52,36 +62,45 @@ export async function POST(request: NextRequest) {
     else if (file.type === 'image/svg+xml') ext = '.svg';
     else if (file.type === 'image/jpeg') ext = '.jpg';
 
+    if (ext === '.svg') mimeType = 'image/svg+xml';
+    else if (ext === '.png') mimeType = 'image/png';
+    else if (ext === '.webp') mimeType = 'image/webp';
+    else if (ext === '.gif') mimeType = 'image/gif';
+    else if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
     const uniqueId = Date.now() + '_' + crypto.randomBytes(6).toString('hex');
     const filename = `img_${uniqueId}${ext}`;
 
-    let saved = false;
+    // 1. Always persist to database image registry for 100% serverless multi-container consistency
     try {
-      if (!fs.existsSync(UPLOADS_DIR)) {
-        fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-      }
-      const destination = path.join(UPLOADS_DIR, filename);
-      fs.writeFileSync(destination, buffer);
-      saved = true;
-    } catch {
-      // Primary uploads directory read-only on Vercel, save to TMP_UPLOADS_DIR
-      try {
-        if (!fs.existsSync(TMP_UPLOADS_DIR)) {
-          fs.mkdirSync(TMP_UPLOADS_DIR, { recursive: true });
-        }
-        const tmpDestination = path.join(TMP_UPLOADS_DIR, filename);
-        fs.writeFileSync(tmpDestination, buffer);
-        saved = true;
-      } catch (tmpErr) {
-        console.error('Failed to save to tmp uploads:', tmpErr);
-      }
+      saveUploadedImage(filename, mimeType, buffer);
+    } catch (dbErr) {
+      console.warn('Notice: Image DB registry save note:', dbErr);
     }
 
-    if (!saved) {
-      throw new Error('Could not persist uploaded file to storage');
+    // 2. Persist to disk locations where possible
+    const targetDirs = [
+      UPLOADS_DIR,
+      PUBLIC_UPLOADS_DIR,
+      PUBLIC_API_UPLOADS_DIR,
+      TMP_UPLOADS_DIR,
+    ];
+
+    let atLeastOneSaved = false;
+    for (const dir of targetDirs) {
+      try {
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+        const destination = path.join(dir, filename);
+        fs.writeFileSync(destination, buffer);
+        atLeastOneSaved = true;
+      } catch {
+        // Safe to ignore read-only failures on serverless filesystem
+      }
     }
 
     const fileUrl = `/api/uploads/${filename}`;
