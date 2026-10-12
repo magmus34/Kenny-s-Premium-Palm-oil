@@ -7,9 +7,6 @@ import {
   getProductsFromFirestore,
   saveProductToFirestore,
   deleteProductFromFirestore,
-  getStoreSettingsFromFirestore,
-  saveStoreSettingsToFirestore,
-  saveOrderToFirestore,
 } from './firestore-rest';
 
 import { Product, StoreSettings } from './types';
@@ -57,26 +54,12 @@ interface DatabaseSchema {
   uploadedImages?: Record<string, UploadedImageData>;
 }
 
-function getAppRoot(): string {
-  if (typeof process !== 'undefined' && process.cwd) {
-    const cwd = process.cwd();
-    if (fs.existsSync(path.join(cwd, 'package.json'))) {
-      return cwd;
-    }
-  }
-  if (fs.existsSync('/app/applet/package.json')) {
-    return '/app/applet';
-  }
-  return process.cwd ? process.cwd() : '.';
-}
-
-const APP_ROOT = getAppRoot();
-const DATA_DIR = path.join(APP_ROOT, 'data');
+const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 export const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
 // Public static directories for Next.js and Vercel CDN static file serving
-export const PUBLIC_DIR = path.join(APP_ROOT, 'public');
+export const PUBLIC_DIR = path.join(process.cwd(), 'public');
 export const PUBLIC_UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
 export const PUBLIC_API_UPLOADS_DIR = path.join(PUBLIC_DIR, 'api', 'uploads');
 
@@ -589,43 +572,20 @@ export function saveDatabase(data: DatabaseSchema): void {
 
 // ----------------- Product Operations -----------------
 
-/**
- * Authoritative cloud fetch from Firestore.
- * Updates local memoryDb cache and returns latest products.
- */
-export async function fetchProductsAsync(includeUnpublished = false): Promise<Product[]> {
-  try {
-    const cloudProducts = await getProductsFromFirestore(includeUnpublished);
-    if (cloudProducts !== null) {
-      const db = getDatabase();
-      if (includeUnpublished) {
-        db.products = cloudProducts;
-      } else {
-        const unpublished = db.products.filter((p) => p.isPublished === false);
-        const existingIds = new Set(cloudProducts.map((p) => p.id));
-        db.products = [...cloudProducts, ...unpublished.filter((p) => !existingIds.has(p.id))];
-      }
-      saveDatabase(db);
-      return cloudProducts;
-    }
-  } catch (err) {
-    console.warn('Notice: Firestore product fetch notice:', err);
-  }
-  return getAllProducts(includeUnpublished);
-}
-
 export function getAllProducts(includeUnpublished = false): Product[] {
   const db = getDatabase();
   const list = includeUnpublished
     ? db.products
     : db.products.filter((p) => p.isPublished !== false);
 
-  // Return sorted by sortOrder if available, or maintain saved order
+  // Return sorted stably by sortOrder ascending, then by creation date
   return [...list].sort((a, b) => {
-    if (a.sortOrder !== undefined && b.sortOrder !== undefined) {
-      return a.sortOrder - b.sortOrder;
+    const orderA = typeof a.sortOrder === 'number' ? a.sortOrder : 9999;
+    const orderB = typeof b.sortOrder === 'number' ? b.sortOrder : 9999;
+    if (orderA !== orderB) {
+      return orderA - orderB;
     }
-    return 0;
+    return (a.createdAt || '').localeCompare(b.createdAt || '');
   });
 }
 
@@ -634,21 +594,17 @@ export function getProductById(id: string): Product | null {
   return db.products.find((p) => p.id === id) || null;
 }
 
-export async function createProductAsync(product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
-  const newProduct = createProduct(product);
-  try {
-    await saveProductToFirestore(newProduct);
-  } catch (err) {
-    console.warn('Notice: Firestore product creation notice:', err);
-  }
-  return newProduct;
-}
-
 export function createProduct(product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Product {
   const db = getDatabase();
   const numericPrice = Number(product.price);
   const numericQty = product.quantity !== undefined ? Number(product.quantity) : 100;
-  const numericSortOrder = product.sortOrder !== undefined ? Number(product.sortOrder) : undefined;
+
+  // By default, place new product at the end of the catalog (NOT jumping to the top)
+  const maxOrder = db.products.reduce((max, p) => Math.max(max, typeof p.sortOrder === 'number' ? p.sortOrder : 0), 0);
+  const numericSortOrder =
+    product.sortOrder !== undefined && !isNaN(Number(product.sortOrder))
+      ? Number(product.sortOrder)
+      : maxOrder + 1;
 
   const newProduct: Product = {
     id: 'prod_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
@@ -659,35 +615,45 @@ export function createProduct(product: Omit<Product, 'id' | 'createdAt' | 'updat
     category: product.category.trim() || 'Palm Oil',
     imageUrl: product.imageUrl.trim() || '/api/uploads/sample_1l.svg',
     isPublished: product.isPublished !== false, // default to true
-    sortOrder: numericSortOrder !== undefined && !isNaN(numericSortOrder) ? numericSortOrder : undefined,
+    sortOrder: numericSortOrder,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
 
-  db.products.unshift(newProduct);
+  // Append to bottom of list so it never pushes other products down or jumps to top
+  db.products.push(newProduct);
   saveDatabase(db);
 
   // Background sync to Firestore
-  saveProductToFirestore(newProduct).catch((err) => {
-    console.warn('Background firestore product save notice:', err);
-  });
+  saveProductToFirestore(newProduct).catch(() => {});
 
   return newProduct;
 }
 
-export async function updateProductAsync(
-  id: string,
-  updates: Partial<Omit<Product, 'id' | 'createdAt'>>
-): Promise<Product | null> {
-  const updated = updateProduct(id, updates);
-  if (updated) {
-    try {
-      await saveProductToFirestore(updated);
-    } catch (err) {
-      console.warn('Notice: Firestore product update notice:', err);
+export function reorderProducts(orderedIds: string[]): Product[] {
+  const db = getDatabase();
+  const idToOrder = new Map<string, number>();
+  orderedIds.forEach((id, index) => {
+    idToOrder.set(id, index);
+  });
+
+  const affected: Product[] = [];
+  db.products.forEach((p) => {
+    if (idToOrder.has(p.id)) {
+      p.sortOrder = idToOrder.get(p.id)!;
+      p.updatedAt = new Date().toISOString();
+      affected.push(p);
     }
-  }
-  return updated;
+  });
+
+  saveDatabase(db);
+
+  // Background sync updated sortOrders to Firestore
+  affected.forEach((p) => {
+    saveProductToFirestore(p).catch(() => {});
+  });
+
+  return getAllProducts(true);
 }
 
 export function updateProduct(id: string, updates: Partial<Omit<Product, 'id' | 'createdAt'>>): Product | null {
@@ -711,25 +677,7 @@ export function updateProduct(id: string, updates: Partial<Omit<Product, 'id' | 
 
   db.products[index] = updated;
   saveDatabase(db);
-
-  // Background sync to Firestore
-  saveProductToFirestore(updated).catch((err) => {
-    console.warn('Background firestore product update notice:', err);
-  });
-
   return updated;
-}
-
-export async function deleteProductAsync(id: string): Promise<boolean> {
-  const deleted = deleteProduct(id);
-  if (deleted) {
-    try {
-      await deleteProductFromFirestore(id);
-    } catch (err) {
-      console.warn('Notice: Firestore product delete notice:', err);
-    }
-  }
-  return deleted;
 }
 
 export function deleteProduct(id: string): boolean {
@@ -739,11 +687,6 @@ export function deleteProduct(id: string): boolean {
 
   const [removed] = db.products.splice(index, 1);
   saveDatabase(db);
-
-  // Background delete from Firestore
-  deleteProductFromFirestore(id).catch((err) => {
-    console.warn('Background firestore product delete notice:', err);
-  });
 
   // If the removed product had a custom uploaded image in our uploads dir (not sample SVGs),
   // clean up the physical file
@@ -824,34 +767,9 @@ export function resetOrders(): boolean {
 
 // ----------------- Store Settings -----------------
 
-export async function fetchStoreSettingsAsync(): Promise<StoreSettings> {
-  try {
-    const cloudSettings = await getStoreSettingsFromFirestore();
-    if (cloudSettings !== null) {
-      const db = getDatabase();
-      db.settings = cloudSettings;
-      saveDatabase(db);
-      return cloudSettings;
-    }
-  } catch (err) {
-    console.warn('Notice: Firestore settings fetch notice:', err);
-  }
-  return getStoreSettings();
-}
-
 export function getStoreSettings(): StoreSettings {
   const db = getDatabase();
   return db.settings;
-}
-
-export async function updateStoreSettingsAsync(newSettings: Partial<StoreSettings>): Promise<StoreSettings> {
-  const updated = updateStoreSettings(newSettings);
-  try {
-    await saveStoreSettingsToFirestore(updated);
-  } catch (err) {
-    console.warn('Notice: Firestore settings update notice:', err);
-  }
-  return updated;
 }
 
 export function updateStoreSettings(newSettings: Partial<StoreSettings>): StoreSettings {
@@ -861,12 +779,6 @@ export function updateStoreSettings(newSettings: Partial<StoreSettings>): StoreS
     ...newSettings,
   };
   saveDatabase(db);
-
-  // Background sync to Firestore
-  saveStoreSettingsToFirestore(db.settings).catch((err) => {
-    console.warn('Background firestore settings save notice:', err);
-  });
-
   return db.settings;
 }
 

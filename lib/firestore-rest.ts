@@ -1,7 +1,6 @@
 /**
  * Direct, ultra-fast Firestore REST client using standard fetch.
  * Designed to work reliably in Node.js, Next.js App Router, and Vercel Serverless.
- * Bypasses long-polling / WebChannel overhead of client SDKs in server environments.
  */
 
 import appletConfig from '../firebase-applet-config.json';
@@ -102,7 +101,7 @@ function docToProduct(doc: any): Product {
     category: data.category || 'Palm Oil',
     imageUrl: data.imageUrl || '/api/uploads/sample_1l.svg',
     isPublished: data.isPublished !== false,
-    sortOrder: data.sortOrder !== undefined ? Number(data.sortOrder) : 0,
+    sortOrder: typeof data.sortOrder === 'number' ? data.sortOrder : 9999,
     createdAt: data.createdAt || doc.createTime || new Date().toISOString(),
     updatedAt: data.updatedAt || doc.updateTime || new Date().toISOString(),
   };
@@ -117,46 +116,6 @@ function productToFields(prod: Product): Record<string, unknown> {
     }
   }
   return fields;
-}
-
-/**
- * Checks if Firestore has been initialized with the meta flag.
- */
-export async function isFirestoreInitialized(): Promise<boolean> {
-  try {
-    const url = `${BASE_URL}/settings/meta?key=${API_KEY}`;
-    const res = await fetch(url, { cache: 'no-store' });
-    if (res.status === 200) {
-      const data = await res.json();
-      const val = firestoreValueToJs(data?.fields?.initialized);
-      return val === true;
-    }
-    return false;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Sets the initialized flag in Firestore so default products are NEVER restored after user deletes them.
- */
-export async function markFirestoreInitialized(): Promise<void> {
-  try {
-    const url = `${BASE_URL}/settings/meta?key=${API_KEY}`;
-    await fetch(url, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fields: {
-          initialized: { booleanValue: true },
-          updatedAt: { stringValue: new Date().toISOString() },
-        },
-      }),
-      cache: 'no-store',
-    });
-  } catch (err) {
-    console.warn('Failed marking firestore as initialized:', err);
-  }
 }
 
 /**
@@ -200,12 +159,12 @@ export async function getProductsFromFirestore(includeUnpublished = false): Prom
       ? products
       : products.filter((p) => p.isPublished !== false);
 
-    // Sort by sortOrder then createdAt
+    // Stably sort by sortOrder ascending, and then by createdAt ascending
     return filtered.sort((a, b) => {
-      const soA = a.sortOrder ?? 0;
-      const soB = b.sortOrder ?? 0;
+      const soA = typeof a.sortOrder === 'number' ? a.sortOrder : 9999;
+      const soB = typeof b.sortOrder === 'number' ? b.sortOrder : 9999;
       if (soA !== soB) return soA - soB;
-      return (b.createdAt || '').localeCompare(a.createdAt || '');
+      return (a.createdAt || '').localeCompare(b.createdAt || '');
     });
   } catch (err) {
     console.error('Error fetching products from Firestore REST:', err);
@@ -228,13 +187,7 @@ export async function saveProductToFirestore(product: Product): Promise<boolean>
       cache: 'no-store',
     });
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error(`Firestore save product failed: HTTP ${res.status}`, errText);
-      return false;
-    }
-
-    return true;
+    return res.ok;
   } catch (err) {
     console.error('Error saving product to Firestore REST:', err);
     return false;
@@ -252,13 +205,7 @@ export async function deleteProductFromFirestore(id: string): Promise<boolean> {
       cache: 'no-store',
     });
 
-    if (!res.ok && res.status !== 404) {
-      const errText = await res.text();
-      console.error(`Firestore delete product failed: HTTP ${res.status}`, errText);
-      return false;
-    }
-
-    return true;
+    return res.ok || res.status === 404;
   } catch (err) {
     console.error('Error deleting product from Firestore REST:', err);
     return false;
@@ -325,36 +272,3 @@ export async function saveStoreSettingsToFirestore(settings: StoreSettings): Pro
     return false;
   }
 }
-
-/**
- * Saves a customer order to Firestore /orders/{orderId}.
- */
-export async function saveOrderToFirestore(order: any): Promise<boolean> {
-  try {
-    const url = `${BASE_URL}/orders/${order.orderId}?key=${API_KEY}`;
-    const fields: Record<string, unknown> = {
-      orderId: { stringValue: order.orderId },
-      customerName: { stringValue: order.customerName },
-      customerLocation: { stringValue: order.customerLocation },
-      customerWhatsApp: { stringValue: order.customerWhatsApp },
-      itemsJson: { stringValue: JSON.stringify(order.items || []) },
-      total: { doubleValue: Number(order.total) || 0 },
-      paymentStatus: { stringValue: order.paymentStatus || 'Pending' },
-      orderStatus: { stringValue: order.orderStatus || 'Pending' },
-      createdAt: { stringValue: order.createdAt || new Date().toISOString() },
-    };
-
-    const res = await fetch(url, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields }),
-      cache: 'no-store',
-    });
-
-    return res.ok;
-  } catch (err) {
-    console.warn('Error saving order to Firestore:', err);
-    return false;
-  }
-}
-

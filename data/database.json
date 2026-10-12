@@ -1,26 +1,26 @@
 {
   "products": [
     {
-      "id": "prod_1791638744536_urgvn",
-      "name": "kgjg",
-      "price": 2345,
-      "quantity": 100,
-      "description": "lukgfjgfxcgh",
-      "category": "Palm Oil",
-      "imageUrl": "/api/uploads/img_1791638740857_d8641a5487d3.jpeg",
-      "createdAt": "2026-10-10T13:25:44.536Z",
-      "updatedAt": "2026-10-10T13:25:44.536Z"
+      "id": "prod_1l",
+      "name": "1 Litre Palm Oil (Food Grade Bottle)",
+      "price": 2500,
+      "description": "Pure, fresh, unadulterated red palm oil in a sealed 1-litre tamper-proof bottle. Deep natural red color, zero odor, high smoking point. Perfect for everyday home cooking.",
+      "category": "Packaged Palm Oil",
+      "imageUrl": "/api/uploads/sample_1l.svg",
+      "createdAt": "2026-10-07T11:00:24.617Z",
+      "updatedAt": "2026-10-12T15:37:31.046Z",
+      "sortOrder": 0
     },
     {
-      "id": "prod_1791491721153_3osb2",
-      "name": "Kenny Super Premium 10L Jerrycan (Delta Sun-Ripened)",
-      "price": 23500,
-      "quantity": 60,
-      "description": "Freshly pressed virgin red palm oil with rich carotene and traditional scent.",
-      "category": "Palm Oil",
-      "imageUrl": "/api/uploads/img_1791491721123_d20ae407a5b8.svg",
-      "createdAt": "2026-10-08T20:35:21.153Z",
-      "updatedAt": "2026-10-08T20:35:21.153Z"
+      "id": "prod_2l",
+      "name": "2 Litres Palm Oil (Family Size)",
+      "price": 4800,
+      "description": "Freshly tapped and milled palm oil directly from our village presses. Rich in vitamin E and beta-carotene with authentic Nigerian aroma. Sealed with safety cap.",
+      "category": "Packaged Palm Oil",
+      "imageUrl": "/api/uploads/sample_2l.svg",
+      "createdAt": "2026-10-07T11:00:24.617Z",
+      "updatedAt": "2026-10-12T15:37:31.046Z",
+      "sortOrder": 1
     },
     {
       "id": "prod_1791491519167_x4dqe",
@@ -31,27 +31,8 @@
       "category": "Packaged Palm Oil",
       "imageUrl": "/api/uploads/img_1791491519123_e8224593ec7a.svg",
       "createdAt": "2026-10-08T20:31:59.167Z",
-      "updatedAt": "2026-10-08T20:31:59.167Z"
-    },
-    {
-      "id": "prod_1l",
-      "name": "1 Litre Palm Oil (Food Grade Bottle)",
-      "price": 2500,
-      "description": "Pure, fresh, unadulterated red palm oil in a sealed 1-litre tamper-proof bottle. Deep natural red color, zero odor, high smoking point. Perfect for everyday home cooking.",
-      "category": "Packaged Palm Oil",
-      "imageUrl": "/api/uploads/sample_1l.svg",
-      "createdAt": "2026-10-07T11:00:24.617Z",
-      "updatedAt": "2026-10-07T11:00:24.617Z"
-    },
-    {
-      "id": "prod_2l",
-      "name": "2 Litres Palm Oil (Family Size)",
-      "price": 4800,
-      "description": "Freshly tapped and milled palm oil directly from our village presses. Rich in vitamin E and beta-carotene with authentic Nigerian aroma. Sealed with safety cap.",
-      "category": "Packaged Palm Oil",
-      "imageUrl": "/api/uploads/sample_2l.svg",
-      "createdAt": "2026-10-07T11:00:24.617Z",
-      "updatedAt": "2026-10-07T11:00:24.617Z"
+      "updatedAt": "2026-10-12T15:37:31.046Z",
+      "sortOrder": 2
     },
     {
       "id": "prod_5l",
@@ -61,7 +42,8 @@
       "category": "Palm Oil",
       "imageUrl": "/api/uploads/sample_5l.svg",
       "createdAt": "2026-10-07T11:00:24.617Z",
-      "updatedAt": "2026-10-07T11:00:24.617Z"
+      "updatedAt": "2026-10-12T15:37:31.046Z",
+      "sortOrder": 3
     },
     {
       "id": "prod_10l",
@@ -71,7 +53,20 @@
       "category": "Palm Oil",
       "imageUrl": "/api/uploads/sample_10l.svg",
       "createdAt": "2026-10-07T11:00:24.617Z",
-      "updatedAt": "2026-10-07T11:00:24.617Z"
+      "updatedAt": "2026-10-12T15:37:31.046Z",
+      "sortOrder": 4
+    },
+    {
+      "id": "prod_1791491721153_3osb2",
+      "name": "Kenny Super Premium 10L Jerrycan (Delta Sun-Ripened)",
+      "price": 23500,
+      "quantity": 60,
+      "description": "Freshly pressed virgin red palm oil with rich carotene and traditional scent.",
+      "category": "Palm Oil",
+      "imageUrl": "/api/uploads/img_1791491721123_d20ae407a5b8.svg",
+      "createdAt": "2026-10-08T20:35:21.153Z",
+      "updatedAt": "2026-10-12T15:37:31.046Z",
+      "sortOrder": 5
     },
     {
       "id": "prod_25l",
@@ -81,7 +76,8 @@
       "category": "Bulk Palm Oil",
       "imageUrl": "/api/uploads/sample_25l.svg",
       "createdAt": "2026-10-07T11:00:24.617Z",
-      "updatedAt": "2026-10-07T11:00:24.617Z"
+      "updatedAt": "2026-10-12T15:37:31.046Z",
+      "sortOrder": 6
     },
     {
       "id": "prod_50l",
@@ -91,7 +87,8 @@
       "category": "Bulk Palm Oil",
       "imageUrl": "/api/uploads/sample_50l.svg",
       "createdAt": "2026-10-07T11:00:24.617Z",
-      "updatedAt": "2026-10-07T11:00:24.617Z"
+      "updatedAt": "2026-10-12T15:37:31.046Z",
+      "sortOrder": 7
     },
     {
       "id": "prod_bulk_drum",
@@ -101,7 +98,8 @@
       "category": "Bulk Palm Oil",
       "imageUrl": "/api/uploads/sample_drum.svg",
       "createdAt": "2026-10-07T11:00:24.617Z",
-      "updatedAt": "2026-10-07T11:00:24.617Z"
+      "updatedAt": "2026-10-12T15:37:31.046Z",
+      "sortOrder": 9
     }
   ],
   "orders": [
@@ -139,8 +137,6 @@
     "username": "admin",
     "passwordHash": "53b1630a80b48615d851a9c21f77353940911fb08b3938393a5bbcead1a6e57a",
     "sessions": [
-      "adm_1791488643558_57d2c39ce3e863a88f0a8c39c9630193.6a096bccd3de81eb0fe4c9603effca8239a6aa47c257662215756830be2d9e87",
-      "adm_1791490517927_631cc6fa7b125fe55ccd0090c72eb3b1.909b76fff3ff1f880ba1953ea65b29b95eb1560400aa8a9dd030aeae1f910d0b",
       "adm_1791491518748_679bae13ff3a9e57cc3c706c54e6a839.8e30a4a50a70c72712bac4c909197a2db0b3c11726898a6e916855572fcc63d2",
       "adm_1791491720640_f40afc3d734ab1a4641c1d4490d3e0c8.26b0015bc80a3365e40debce183b348e63b07cac28719cd4c8b79ddd37f2f610",
       "adm_1791638016394_841370cfbb15b5dc15c8c634700e977b.ed946e9e591e2b2eda2d17b129c4879f9d2fa070f537562bd9d1a3a7e87441cb",
@@ -158,7 +154,9 @@
       "adm_1791814918010_7e96e6c27a20fd1143c46c960ccc7fb7.5059b55439ac451ea3315ffdebcfa7ffe3726c864d2b2cfcce698e7f263fedfd",
       "adm_1791814932508_bcaea544141286d50b057d80b7ca2287.40c587d9ee38b50fa73af02287376e8f8cd64fd8a24634d3b8cfcd9f33154ab3",
       "adm_1791815038338_2ba918b9c806579cb208451e69dfac9a.f84650e1c1a2c9085448b3b4f08c3c8956de74d96c8c1059e2e4637608cd3db7",
-      "adm_1791818567714_4de522fc288e2baf262b669373c68b3a.945a38fcaa8e958dbaee2bd5aa5b4a12d6aaf8ebd812c253b7f3ecdbccf37feb"
+      "adm_1791818567714_4de522fc288e2baf262b669373c68b3a.945a38fcaa8e958dbaee2bd5aa5b4a12d6aaf8ebd812c253b7f3ecdbccf37feb",
+      "adm_1791819078689_4a29fec2c51d1fb608a4ee5808cfbb03.df0ee3722d53794ca73439b6088ce9bee95c90b8714014f8d43b39a8448cd9e5",
+      "adm_1791819450050_a2bba5736b73ede757291eaf41d6e7b6.b0ad0a939764b1d950c2f255ecee8e165cd1ac2db6b1d1c33d12d4efb690baaa"
     ]
   },
   "uploadedImages": {

@@ -12,6 +12,8 @@ import {
   Plus,
   Edit2,
   Trash2,
+  ArrowUp,
+  ArrowDown,
   LogOut,
   ExternalLink,
   Upload,
@@ -148,16 +150,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setErrorMessage(msg);
     setTimeout(() => setErrorMessage(null), 6000);
   };
-
-  const notifyStoreSync = useCallback(() => {
-    try {
-      if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
-        const channel = new BroadcastChannel('oroma_store_sync');
-        channel.postMessage({ type: 'SYNC_PRODUCTS', timestamp: Date.now() });
-        channel.close();
-      }
-    } catch {}
-  }, []);
 
   const fetchStorageAudit = useCallback(async () => {
     try {
@@ -439,7 +431,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       }
       setBannerSuccess(msg);
       showSuccess(msg);
-      notifyStoreSync();
       fetchStorageAudit();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Banner upload failed';
@@ -492,7 +483,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       const msg = `Applied "${presetName}" banner and saved to store!`;
       setBannerSuccess(msg);
       showSuccess(msg);
-      notifyStoreSync();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to update banner';
       setBannerError(msg);
@@ -612,11 +602,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         );
         showSuccess(`Product "${data.product.name}" updated successfully in database.`);
       } else {
-        setProducts((prev) => [data.product, ...prev]);
+        setProducts((prev) => [...prev, data.product]);
         showSuccess(`New product "${data.product.name}" created and saved to database!`);
       }
 
-      notifyStoreSync();
       setIsProductModalOpen(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to save product';
@@ -647,7 +636,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       }
 
       setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
-      notifyStoreSync();
       showSuccess(`Product "${productToDelete.name}" deleted.`);
       setProductToDelete(null);
     } catch (err: unknown) {
@@ -655,6 +643,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       showError(msg);
     } finally {
       setIsDeletingProduct(false);
+    }
+  };
+
+  // ---------------- Reorder / Move Product ----------------
+  const handleMoveProduct = async (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= products.length) return;
+
+    const newProducts = [...products];
+    const [moved] = newProducts.splice(index, 1);
+    newProducts.splice(targetIndex, 0, moved);
+
+    // Optimistically update UI
+    setProducts(newProducts);
+
+    try {
+      const orderedIds = newProducts.map((p) => p.id);
+      const res = await fetch('/api/products/reorder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+        body: JSON.stringify({ orderedIds }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update product order');
+      }
+      showSuccess(`Moved "${moved.name}" ${direction}!`);
+    } catch (err: unknown) {
+      console.error('Reorder error:', err);
+      fetchData();
+      showError('Failed to save new product order.');
     }
   };
 
@@ -1147,7 +1170,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             {/* Products Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {products.map((product) => (
+              {products.map((product, index) => (
                 <div
                   key={product.id}
                   className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-xs flex flex-col justify-between"
@@ -1207,22 +1230,51 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="p-3 border-t border-stone-100 bg-stone-50/50 flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => openEditProductModal(product)}
-                      className="px-3 py-1.5 rounded-lg bg-stone-200 hover:bg-stone-300 text-stone-800 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                      <span>Edit</span>
-                    </button>
-                    <button
-                      onClick={() => setProductToDelete(product)}
-                      className="px-3 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Delete</span>
-                    </button>
+                  {/* Actions & Position Controls */}
+                  <div className="p-3 border-t border-stone-100 bg-stone-50/50 flex items-center justify-between gap-1.5">
+                    {/* Position order controls */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleMoveProduct(index, 'up')}
+                        disabled={index === 0}
+                        title="Move Up in Store"
+                        className="p-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed text-stone-700 transition-colors cursor-pointer"
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveProduct(index, 'down')}
+                        disabled={index === products.length - 1}
+                        title="Move Down in Store"
+                        className="p-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed text-stone-700 transition-colors cursor-pointer"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="text-[10px] font-semibold text-stone-400 ml-0.5">
+                        #{index + 1}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => openEditProductModal(product)}
+                        className="px-2.5 py-1.5 rounded-lg bg-stone-200 hover:bg-stone-300 text-stone-800 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setProductToDelete(product)}
+                        className="px-2.5 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
