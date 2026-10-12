@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+      <rect width="500" height="500" fill="#fff7ed" />
+      <circle cx="250" cy="250" r="190" fill="#ffedd5" />
+      <!-- Bottle neck and body -->
+      <rect x="220" y="90" width="60" height="25" rx="5" fill="#ea580c" />
+      <rect x="230" y="115" width="40" height="45" fill="#c2410c" />
+      <!-- Bottle shoulder & body -->
+      <path d="M 230 160 C 200 180 180 210 180 250 L 180 400 Q 180 415 195 415 L 305 415 Q 320 415 320 400 L 320 250 C 320 210 300 180 270 160 Z" fill="#c2410c" />
+      <!-- Palm oil rich gradient fill inside bottle -->
+      <path d="M 186 240 L 314 240 L 314 395 Q 314 407 302 407 L 198 407 Q 186 407 186 395 Z" fill="#9a3412" />
+      <!-- Label -->
+      <rect x="195" y="260" width="110" height="100" rx="6" fill="#fff7ed" />
+      <rect x="202" y="268" width="96" height="20" rx="3" fill="#ea580c" />
+      <text x="250" y="282" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="#ffffff">PURE PALM OIL</text>
+      <text x="250" y="318" text-anchor="middle" font-family="system-ui, sans-serif" font-size="24" font-weight="800" fill="#9a3412">1 LITRE</text>
+      <text x="250" y="342" text-anchor="middle" font-family="system-ui, sans-serif" font-size="9" font-weight="600" fill="#c2410c">NO ADDITIVES</text>
+      <!-- Cap details -->
+      <rect x="215" y="70" width="70" height="22" rx="4" fill="#fb923c" />
+    </svg>

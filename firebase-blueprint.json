@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Palm oil product listing with volume, price, stock, and cloud image URL.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "quantity": { "type": "number" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "isPublished": { "type": "boolean" },
+        "sortOrder": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "price", "category", "imageUrl"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order containing purchased palm oil items and delivery details.",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerLocation": { "type": "string" },
+        "customerWhatsApp": { "type": "string" },
+        "items": { "type": "string" },
+        "total": { "type": "number" },
+        "paymentStatus": { "type": "string" },
+        "orderStatus": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["orderId", "customerName", "customerWhatsApp", "total"]
+    },
+    "StoreSettings": {
+      "title": "StoreSettings",
+      "description": "Store branding, owner contact details, and bank transfer credentials.",
+      "type": "object",
+      "properties": {
+        "businessName": { "type": "string" },
+        "banner": { "type": "string" },
+        "bannerSubtitle": { "type": "string" },
+        "whatsappName": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "bankName": { "type": "string" },
+        "accountName": { "type": "string" },
+        "accountNumber": { "type": "string" }
+      },
+      "required": ["businessName", "whatsappNumber"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of available palm oil products shown on the storefront."
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection of customer orders placed via the checkout drawer."
+    },
+    "/settings/{settingId}": {
+      "schema": "StoreSettings",
+      "description": "Store configuration and payment details."
+    }
+  }
+}

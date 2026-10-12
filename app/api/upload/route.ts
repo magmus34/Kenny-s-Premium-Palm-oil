@@ -80,6 +80,8 @@ export async function POST(request: NextRequest) {
     const uniqueId = Date.now() + '_' + crypto.randomBytes(6).toString('hex');
     const filename = `img_${uniqueId}${ext}`;
 
+    let fbErrorNote: string | null = null;
+
     // 1. If Firebase Storage is configured, upload directly to cloud storage!
     if (isFirebaseConfigured()) {
       try {
@@ -97,13 +99,14 @@ export async function POST(request: NextRequest) {
           success: true,
           url: cloudUrl,
           storageProvider: 'firebase-storage',
+          firebaseConfigured: true,
           size: file.size,
           filename,
         });
       } catch (fbErr: unknown) {
-        console.error('Firebase Storage upload error, falling back to local storage:', fbErr);
-        // If Firebase Storage failed at runtime (e.g. permission or quota error),
-        // proceed to local fallback with error note
+        fbErrorNote = fbErr instanceof Error ? fbErr.message : String(fbErr);
+        console.error('Firebase Storage upload error, falling back to local storage:', fbErrorNote);
+        // Fallback to local storage with diagnostic note
       }
     }
 
@@ -140,10 +143,12 @@ export async function POST(request: NextRequest) {
       success: true,
       url: fileUrl,
       storageProvider: 'local',
-      firebaseConfigured: false,
+      firebaseConfigured: fbStatus.isConfigured,
+      firebaseError: fbErrorNote,
       missingFirebaseVars: fbStatus.missingVars,
-      warning:
-        'Firebase Storage is not configured. To make uploaded images persist permanently across Vercel deployments, configure NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET and related credentials in Vercel.',
+      warning: fbErrorNote
+        ? `Firebase Storage returned: ${fbErrorNote}. Image saved to local registry fallback.`
+        : 'Firebase Storage is not configured. Configure NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET in Vercel to persist across deployments.',
       size: file.size,
       filename,
     });

@@ -2520,14 +2520,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     ))}
                   </div>
 
-                  <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-xs text-stone-700 space-y-1.5 mt-3">
-                    <p className="font-bold text-stone-900">Setup Steps:</p>
+                  <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-xs text-stone-700 space-y-2 mt-3">
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold text-stone-900">Connected Firebase Console Project:</p>
+                      <a
+                        href={`https://console.firebase.google.com/project/${storageAudit?.firebaseStatus?.projectId || 'project-d8dd0e03-cbfc-4ee5-a7a'}/storage`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-[11px] transition-colors"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>Open Firebase Console Storage</span>
+                      </a>
+                    </div>
                     <ol className="list-decimal list-inside space-y-1 text-[11px] text-stone-600 leading-relaxed">
-                      <li>Go to Firebase Console (console.firebase.google.com) and open your project.</li>
-                      <li>In the left sidebar, click <strong>Build → Storage</strong> and click &quot;Get Started&quot;.</li>
-                      <li>Go to Project Settings (Gear icon) → General → Your Apps → Web App, and copy the config values.</li>
-                      <li>In Vercel, open your project → <strong>Settings → Environment Variables</strong> and paste each key above.</li>
-                      <li>Trigger a redeploy on Vercel. All future uploads will automatically store on Firebase Storage!</li>
+                      <li>Click the button above to open your project in Firebase Console.</li>
+                      <li>If Storage is not yet initialized, click <strong>Get Started</strong> in the Storage tab to activate the bucket.</li>
+                      <li>In Vercel, open your project → <strong>Settings → Environment Variables</strong> and verify the keys.</li>
+                      <li>All future uploads will automatically store on Firebase Storage!</li>
                     </ol>
                   </div>
                 </div>
