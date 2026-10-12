@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Product } from '@/lib/types';
-import { ShoppingBag, Check, Eye } from 'lucide-react';
+import { ShoppingBag, Check, Eye, ImageOff } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -17,6 +17,8 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
   onAddToCart,
   onViewDetails,
 }) => {
+  const [imageError, setImageError] = useState(false);
+
   return (
     <div className="group bg-white rounded-2xl border border-stone-200/90 hover:border-orange-300 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden">
       {/* Product Image Area */}
@@ -24,12 +26,23 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
         onClick={() => onViewDetails(product)}
         className="relative w-full aspect-square bg-stone-50 overflow-hidden cursor-pointer flex items-center justify-center p-4"
       >
-        <img
-          src={product.imageUrl || '/api/uploads/sample_1l.svg'}
-          alt={product.name}
-          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-          loading="lazy"
-        />
+        {!imageError ? (
+          <img
+            src={product.imageUrl || '/api/uploads/sample_1l.svg'}
+            alt={product.name}
+            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-center p-4 bg-orange-50/50 rounded-xl border border-orange-100">
+            <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-2">
+              <ImageOff className="w-6 h-6" />
+            </div>
+            <p className="text-xs font-semibold text-stone-700">{product.name}</p>
+            <span className="text-[10px] text-stone-400 mt-1">Photo update pending</span>
+          </div>
+        )}
 
         {/* Category & Stock Pill */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 items-center">
@@ -58,37 +71,36 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({
           <h3
             onClick={() => onViewDetails(product)}
             className="font-bold text-base text-stone-900 group-hover:text-orange-600 transition-colors line-clamp-1 cursor-pointer"
-            title={product.name}
           >
             {product.name}
           </h3>
-
-          <p className="mt-1.5 text-xs text-stone-500 line-clamp-2 leading-relaxed">
+          <p className="mt-1 text-xs text-stone-500 line-clamp-2">
             {product.description}
           </p>
         </div>
 
-        {/* Price & Action */}
-        <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+        <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-3">
           <div>
-            <span className="text-xs text-stone-400 block font-medium">Price</span>
-            <span className="text-lg font-black text-stone-900">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-stone-400 block">
+              Price
+            </span>
+            <span className="text-lg font-extrabold text-stone-900">
               ₦{product.price.toLocaleString()}
             </span>
           </div>
 
           <button
             onClick={() => onAddToCart(product)}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-xs ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs ${
               quantityInCart > 0
-                ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 border border-orange-300'
-                : 'bg-orange-600 hover:bg-orange-700 text-white shadow-orange-600/20'
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                : 'bg-orange-600 hover:bg-orange-700 text-white hover:shadow-orange-600/20 hover:shadow-md'
             }`}
           >
             {quantityInCart > 0 ? (
               <>
-                <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>In Cart ({quantityInCart})</span>
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                <span>{quantityInCart} in Cart</span>
               </>
             ) : (
               <>

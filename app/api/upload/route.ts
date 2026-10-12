@@ -11,6 +11,11 @@ import {
   isValidAdminSession,
   extractTokenFromRequest,
 } from '@/lib/db';
+import {
+  isFirebaseConfigured,
+  uploadToFirebaseStorage,
+  getFirebaseConfigStatus,
+} from '@/lib/firebase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,6 +30,7 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
+    const uploadCategory = (formData.get('type') as string) || 'products';
 
     if (!file) {
       return NextResponse.json({ success: false, error: 'No file was provided in the upload request' }, { status: 400 });
@@ -74,14 +80,40 @@ export async function POST(request: NextRequest) {
     const uniqueId = Date.now() + '_' + crypto.randomBytes(6).toString('hex');
     const filename = `img_${uniqueId}${ext}`;
 
-    // 1. Always persist to database image registry for 100% serverless multi-container consistency
+    // 1. If Firebase Storage is configured, upload directly to cloud storage!
+    if (isFirebaseConfigured()) {
+      try {
+        const storagePath = `${uploadCategory}/${filename}`;
+        const cloudUrl = await uploadToFirebaseStorage(buffer, storagePath, mimeType);
+
+        // Also save to database in-memory registry as quick local cache
+        try {
+          saveUploadedImage(filename, mimeType, buffer);
+        } catch {
+          // Ignore non-fatal db save error
+        }
+
+        return NextResponse.json({
+          success: true,
+          url: cloudUrl,
+          storageProvider: 'firebase-storage',
+          size: file.size,
+          filename,
+        });
+      } catch (fbErr: unknown) {
+        console.error('Firebase Storage upload error, falling back to local storage:', fbErr);
+        // If Firebase Storage failed at runtime (e.g. permission or quota error),
+        // proceed to local fallback with error note
+      }
+    }
+
+    // 2. Local fallback storage (when Firebase Storage is not yet configured or on local dev)
     try {
       saveUploadedImage(filename, mimeType, buffer);
     } catch (dbErr) {
       console.warn('Notice: Image DB registry save note:', dbErr);
     }
 
-    // 2. Persist to disk locations where possible
     const targetDirs = [
       UPLOADS_DIR,
       PUBLIC_UPLOADS_DIR,
@@ -89,7 +121,6 @@ export async function POST(request: NextRequest) {
       TMP_UPLOADS_DIR,
     ];
 
-    let atLeastOneSaved = false;
     for (const dir of targetDirs) {
       try {
         if (!fs.existsSync(dir)) {
@@ -97,16 +128,22 @@ export async function POST(request: NextRequest) {
         }
         const destination = path.join(dir, filename);
         fs.writeFileSync(destination, buffer);
-        atLeastOneSaved = true;
       } catch {
         // Safe to ignore read-only failures on serverless filesystem
       }
     }
 
     const fileUrl = `/api/uploads/${filename}`;
+    const fbStatus = getFirebaseConfigStatus();
+
     return NextResponse.json({
       success: true,
       url: fileUrl,
+      storageProvider: 'local',
+      firebaseConfigured: false,
+      missingFirebaseVars: fbStatus.missingVars,
+      warning:
+        'Firebase Storage is not configured. To make uploaded images persist permanently across Vercel deployments, configure NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET and related credentials in Vercel.',
       size: file.size,
       filename,
     });

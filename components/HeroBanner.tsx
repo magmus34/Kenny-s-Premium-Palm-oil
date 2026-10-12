@@ -16,15 +16,18 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
   bannerSubtitle,
   onBrowseClick,
 }) => {
+  const [bannerError, setBannerError] = React.useState(false);
+
   return (
     <section className="relative overflow-hidden bg-stone-900 text-white">
       {/* Banner Background Image or Graphic */}
       <div className="absolute inset-0 z-0">
-        {bannerUrl ? (
+        {bannerUrl && !bannerError ? (
           <img
             src={bannerUrl}
             alt={businessName}
             className="w-full h-full object-cover object-center opacity-40 brightness-90 transform scale-105 transition-transform duration-700"
+            onError={() => setBannerError(true)}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-r from-orange-950 via-stone-900 to-amber-950 opacity-90" />

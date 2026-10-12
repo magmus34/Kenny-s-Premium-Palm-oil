@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { Product, Order, StoreSettings } from '@/lib/types';
 import { optimizeImageFile } from '@/lib/image-utils';
@@ -27,7 +27,42 @@ import {
   Phone,
   Lock,
   MessageCircle,
+  Cloud,
+  AlertTriangle,
+  Database,
+  Copy,
+  Check,
 } from 'lucide-react';
+
+interface StorageAuditData {
+  firebaseStatus: {
+    isConfigured: boolean;
+    missingVars: string[];
+    projectId?: string;
+    storageBucket?: string;
+  };
+  productAudit: {
+    id: string;
+    name: string;
+    imageUrl: string;
+    filename?: string;
+    status: string;
+    exists: boolean;
+    needsReupload: boolean;
+  }[];
+  settingsAudit: {
+    banner: string;
+    filename?: string;
+    status: string;
+    exists: boolean;
+    needsReupload: boolean;
+  };
+  configInstructions: {
+    title: string;
+    variables: { name: string; description: string }[];
+    steps: string[];
+  };
+}
 
 interface AdminDashboardProps {
   token: string;
@@ -98,6 +133,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   });
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
+  // Cloud Storage Audit and Setup Guide
+  const [storageAudit, setStorageAudit] = useState<StorageAuditData | null>(null);
+  const [isStorageModalOpen, setIsStorageModalOpen] = useState(false);
+  const [isMigratingToFirebase, setIsMigratingToFirebase] = useState(false);
+  const [copiedVarName, setCopiedVarName] = useState<string | null>(null);
+
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg);
     setTimeout(() => setSuccessMessage(null), 4000);
@@ -108,11 +149,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setTimeout(() => setErrorMessage(null), 6000);
   };
 
+  const fetchStorageAudit = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/storage-status', {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setStorageAudit(data);
+        }
+      }
+    } catch (err) {
+      console.error('Storage audit fetch error:', err);
+    }
+  }, [token]);
+
   // Fetch all data
   const fetchData = async () => {
     setIsLoadingData(true);
     setErrorMessage(null);
     try {
+      fetchStorageAudit();
       const [prodRes, orderRes, setRes] = await Promise.all([
         fetch('/api/products?all=true', { cache: 'no-store' }),
         fetch('/api/orders', {
@@ -176,6 +235,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         const orderData = await orderRes.json();
         const settingsData = await setRes.json();
 
+        fetchStorageAudit();
+
         if (isMounted) {
           if (prodData.success) {
             setProducts(prodData.products);
@@ -213,7 +274,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [token, onLogout]);
+  }, [token, onLogout, fetchStorageAudit]);
 
   // ---------------- Image Upload for Products ----------------
   const uploadProductFile = async (file: File) => {
@@ -234,6 +295,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       const formData = new FormData();
       formData.append('file', optimizedFile);
+      formData.append('type', 'products');
 
       const headers: Record<string, string> = {};
       if (token) {
@@ -257,9 +319,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       setProductForm((prev) => ({ ...prev, imageUrl: data.url }));
       const sizeKb = Math.round(file.size / 1024);
-      const successText = `Product image uploaded successfully (${sizeKb} KB)!`;
+      let successText = `Product image uploaded successfully (${sizeKb} KB)!`;
+      if (data.storageProvider === 'firebase-storage') {
+        successText = `Product image uploaded to Firebase Storage (${sizeKb} KB)!`;
+      } else if (data.warning) {
+        successText = `Product image uploaded (${sizeKb} KB). Connect Firebase Storage in Vercel to persist across all deployments.`;
+      }
       setModalSuccess(successText);
       showSuccess(successText);
+      fetchStorageAudit();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Image upload failed';
       setModalError(msg);
@@ -304,6 +372,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       const formData = new FormData();
       formData.append('file', uploadFile);
+      formData.append('type', 'banners');
 
       const headers: Record<string, string> = {};
       if (token) {
@@ -354,9 +423,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       }
 
       const sizeKb = Math.round(file.size / 1024);
-      const msg = `New banner uploaded & saved to store database successfully (${sizeKb} KB)!`;
+      let msg = `New banner uploaded & saved to store database successfully (${sizeKb} KB)!`;
+      if (data.storageProvider === 'firebase-storage') {
+        msg = `New banner uploaded to Firebase Storage and saved (${sizeKb} KB)!`;
+      }
       setBannerSuccess(msg);
       showSuccess(msg);
+      fetchStorageAudit();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Banner upload failed';
       setBannerError(msg);
@@ -746,6 +819,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <RefreshCw className={`w-4 h-4 ${isLoadingData ? 'animate-spin' : ''}`} />
             </button>
 
+            <button
+              onClick={() => setIsStorageModalOpen(true)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                storageAudit?.firebaseStatus?.isConfigured
+                  ? 'bg-emerald-950/70 text-emerald-200 border-emerald-800 hover:bg-emerald-900'
+                  : 'bg-amber-950/80 text-amber-200 border-amber-700 hover:bg-amber-900'
+              }`}
+              title="Cloud Image Storage & Vercel Persistence"
+            >
+              <Cloud className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden md:inline">
+                {storageAudit?.firebaseStatus?.isConfigured ? 'Firebase Active' : 'Storage Setup'}
+              </span>
+            </button>
+
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white text-xs font-semibold transition-colors"
@@ -845,6 +933,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-center gap-2 shadow-xs animate-in fade-in">
             <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
             <span>{errorMessage}</span>
+          </div>
+        )}
+
+        {/* Missing Images Alert Banner */}
+        {storageAudit?.productAudit?.some((p) => p.needsReupload) && (
+          <div className="mt-3 p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
+              <div>
+                <p className="font-bold text-sm">
+                  ⚠️ Action Required: Missing Product Photo ({storageAudit.productAudit.filter((p) => p.needsReupload).length})
+                </p>
+                <p className="text-amber-800 mt-0.5 leading-relaxed">
+                  Product <strong>{storageAudit.productAudit.filter((p) => p.needsReupload).map((p) => `"${p.name}"`).join(', ')}</strong> references an image that was lost on Vercel before cloud storage was configured. Please edit the product and upload its photo.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setActiveTab('products');
+                const missingProd = products.find((p) =>
+                  storageAudit?.productAudit?.find((a) => a.id === p.id && a.needsReupload)
+                );
+                if (missingProd) openEditProductModal(missingProd);
+              }}
+              className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs"
+            >
+              Upload Photo Now
+            </button>
           </div>
         )}
       </div>
@@ -1028,6 +1145,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         src={product.imageUrl || '/api/uploads/sample_1l.svg'}
                         alt={product.name}
                         className="w-full h-full object-contain"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent && !parent.querySelector('.missing-image-box')) {
+                            const box = document.createElement('div');
+                            box.className = 'missing-image-box w-full h-full flex flex-col items-center justify-center text-center p-3 bg-amber-50 rounded-xl text-amber-800';
+                            box.innerHTML = '<span class="text-xs font-bold text-amber-900">⚠️ Image Missing</span><span class="text-[10px] text-amber-700 mt-1">File lost on Vercel.<br/>Click Edit to re-upload.</span>';
+                            parent.appendChild(box);
+                          }
+                        }}
                       />
                       <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1">
                         <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-orange-100 text-orange-800 border border-orange-200">
@@ -1036,6 +1164,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         {product.isPublished === false && (
                           <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-stone-900 text-stone-200">
                             Hidden
+                          </span>
+                        )}
+                        {storageAudit?.productAudit?.find((a) => a.id === product.id)?.needsReupload && (
+                          <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500 text-white flex items-center gap-1 shadow-xs animate-pulse">
+                            <span>⚠️ Photo Missing</span>
                           </span>
                         )}
                       </div>
@@ -1963,6 +2096,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   Product Image *
                 </label>
 
+                {editingProduct && storageAudit?.productAudit?.find((a) => a.id === editingProduct.id)?.needsReupload && (
+                  <div className="mb-3 p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start gap-2.5">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">⚠️ Photo File Missing from Server</p>
+                      <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                        The previous image ({productForm.imageUrl}) was lost on Vercel before persistent storage was configured. Please click &quot;Upload Photo from Device&quot; below to select a fresh image.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Hidden File Input */}
                 <input
                   type="file"
@@ -2197,6 +2342,204 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 ) : (
                   <span>Yes, Clear All Orders</span>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ===================== CLOUD STORAGE & FIREBASE SETUP MODAL ===================== */}
+      {isStorageModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/75 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="w-full max-w-3xl bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-stone-200 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b border-stone-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
+                  <Cloud className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-stone-900">Cloud Image Storage &amp; Vercel Persistence</h3>
+                  <p className="text-xs text-stone-500">
+                    Configuration and health audit for product photos and store banners.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsStorageModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-colors text-xs font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="overflow-y-auto py-5 space-y-6 flex-1 pr-1">
+              {/* Storage Status Box */}
+              <div
+                className={`p-4 rounded-2xl border ${
+                  storageAudit?.firebaseStatus?.isConfigured
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
+                    : 'bg-amber-50 border-amber-300 text-amber-950'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5">
+                    {storageAudit?.firebaseStatus?.isConfigured ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <p className="font-black text-sm">
+                        {storageAudit?.firebaseStatus?.isConfigured
+                          ? 'Firebase Storage: Active & Persistent'
+                          : 'Firebase Storage: Not Configured (Local/Ephemeral Mode)'}
+                      </p>
+                      <p className="text-xs mt-1 leading-relaxed opacity-90">
+                        {storageAudit?.firebaseStatus?.isConfigured
+                          ? `All new product uploads automatically upload to your Firebase Storage bucket (${storageAudit.firebaseStatus.storageBucket}) and persist forever across all Vercel deployments.`
+                          : 'On Vercel, serverless function filesystems are ephemeral. Any product photos uploaded without Firebase Storage will disappear after container restarts or redeployments. Follow the guide below to enable cloud persistence.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {storageAudit?.firebaseStatus?.isConfigured && (
+                    <button
+                      onClick={async () => {
+                        setIsMigratingToFirebase(true);
+                        try {
+                          const res = await fetch('/api/admin/storage-status', {
+                            method: 'POST',
+                            headers: { Authorization: `Bearer ${token}` },
+                          });
+                          const data = await res.json();
+                          if (res.ok && data.success) {
+                            showSuccess(`Migrated ${data.migratedCount} images to Firebase Storage!`);
+                            fetchData();
+                            fetchStorageAudit();
+                          } else {
+                            showError(data.error || 'Migration failed');
+                          }
+                        } catch {
+                          showError('Network error during migration');
+                        } finally {
+                          setIsMigratingToFirebase(false);
+                        }
+                      }}
+                      disabled={isMigratingToFirebase}
+                      className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shrink-0 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      {isMigratingToFirebase ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Migrating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Database className="w-3.5 h-3.5" />
+                          <span>Migrate Local Images to Cloud</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Product Image Audit Table */}
+              <div>
+                <h4 className="font-bold text-xs uppercase tracking-wider text-stone-500 mb-2">
+                  Image Health Audit ({storageAudit?.productAudit?.length || 0} Products)
+                </h4>
+                <div className="border border-stone-200 rounded-2xl overflow-hidden bg-white shadow-2xs divide-y divide-stone-100 max-h-56 overflow-y-auto">
+                  {storageAudit?.productAudit?.map((prod) => (
+                    <div key={prod.id} className="p-3 flex items-center justify-between text-xs gap-3">
+                      <div className="min-w-0">
+                        <p className="font-bold text-stone-900 truncate">{prod.name}</p>
+                        <p className="text-[11px] text-stone-400 font-mono truncate">{prod.imageUrl}</p>
+                      </div>
+                      <div className="shrink-0">
+                        {prod.needsReupload ? (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3 text-amber-600" />
+                            <span>Missing (Re-upload required)</span>
+                          </span>
+                        ) : prod.status === 'firebase-cloud' ? (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            Cloud Storage
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-700 border border-stone-200">
+                            Bundled Verified
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Vercel Configuration Guide */}
+              {!storageAudit?.firebaseStatus?.isConfigured && (
+                <div className="space-y-3 pt-2">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-stone-500">
+                    Required Vercel Environment Variables
+                  </h4>
+                  <p className="text-xs text-stone-600 leading-relaxed">
+                    To connect Firebase Storage, add these environment variables in your{' '}
+                    <strong>Vercel Project Settings → Environment Variables</strong>:
+                  </p>
+                  <div className="space-y-2">
+                    {storageAudit?.configInstructions?.variables.map((v) => (
+                      <div
+                        key={v.name}
+                        className="p-2.5 bg-stone-50 rounded-xl border border-stone-200 flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div>
+                          <code className="font-mono font-bold text-stone-900 text-[11px]">{v.name}</code>
+                          <p className="text-[10px] text-stone-500 mt-0.5">{v.description}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(v.name);
+                            setCopiedVarName(v.name);
+                            setTimeout(() => setCopiedVarName(null), 2000);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-white border border-stone-200 hover:bg-stone-100 text-[11px] font-semibold text-stone-700 flex items-center gap-1 transition-colors"
+                        >
+                          {copiedVarName === v.name ? (
+                            <>
+                              <Check className="w-3 h-3 text-emerald-600" />
+                              <span>Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3 text-stone-400" />
+                              <span>Copy Key</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-xs text-stone-700 space-y-1.5 mt-3">
+                    <p className="font-bold text-stone-900">Setup Steps:</p>
+                    <ol className="list-decimal list-inside space-y-1 text-[11px] text-stone-600 leading-relaxed">
+                      <li>Go to Firebase Console (console.firebase.google.com) and open your project.</li>
+                      <li>In the left sidebar, click <strong>Build → Storage</strong> and click &quot;Get Started&quot;.</li>
+                      <li>Go to Project Settings (Gear icon) → General → Your Apps → Web App, and copy the config values.</li>
+                      <li>In Vercel, open your project → <strong>Settings → Environment Variables</strong> and paste each key above.</li>
+                      <li>Trigger a redeploy on Vercel. All future uploads will automatically store on Firebase Storage!</li>
+                    </ol>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-4 border-t border-stone-100 flex items-center justify-end">
+              <button
+                onClick={() => setIsStorageModalOpen(false)}
+                className="px-5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs"
+              >
+                Close Guide
               </button>
             </div>
           </div>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+      <rect width="500" height="500" fill="#fff7ed" />
+      <circle cx="250" cy="250" r="190" fill="#ffedd5" />
+      <!-- Yellow Commercial Jerrycan -->
+      <rect x="110" y="140" width="280" height="290" rx="24" fill="#eab308" />
+      <!-- Jerrycan ribs and handle -->
+      <rect x="120" y="150" width="260" height="270" rx="20" fill="#facc15" />
+      <!-- Heavy top handle -->
+      <rect x="210" y="80" width="80" height="60" rx="10" fill="#ca8a04" />
+      <rect x="225" y="95" width="50" height="30" rx="6" fill="#fff7ed" />
+      <!-- Cap on corner -->
+      <rect x="135" y="100" width="55" height="40" rx="6" fill="#ea580c" />
+      <!-- Large Label -->
+      <rect x="145" y="210" width="210" height="170" rx="12" fill="#ffffff" />
+      <rect x="160" y="225" width="180" height="32" rx="6" fill="#ea580c" />
+      <text x="250" y="246" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="700" fill="#ffffff">COMMERCIAL JERRYCAN</text>
+      <text x="250" y="310" text-anchor="middle" font-family="system-ui, sans-serif" font-size="48" font-weight="900" fill="#9a3412">25 LITRES</text>
+      <text x="250" y="352" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#c2410c">WHOLESALE &amp; COMMERCIAL</text>
+    </svg>

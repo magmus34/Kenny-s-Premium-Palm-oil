@@ -98,6 +98,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         src={item.imageUrl || '/api/uploads/sample_1l.svg'}
                         alt={item.name}
                         className="w-full h-full object-contain"
+                        onError={(e) => {
+                          const target = e.currentTarget as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = '/api/uploads/sample_1l.svg';
+                        }}
                       />
                     </div>
 

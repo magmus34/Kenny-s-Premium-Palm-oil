@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+      <rect width="500" height="500" fill="#fff7ed" />
+      <circle cx="250" cy="250" r="190" fill="#ffedd5" />
+      <!-- Bottle neck and handle -->
+      <rect x="220" y="75" width="60" height="25" rx="4" fill="#fb923c" />
+      <rect x="228" y="100" width="44" height="40" fill="#c2410c" />
+      <!-- 2L Bottle with handle -->
+      <path d="M 228 140 C 185 165 160 200 160 250 L 160 405 Q 160 420 175 420 L 325 420 Q 340 420 340 405 L 340 250 C 340 200 315 165 272 140 Z" fill="#c2410c" />
+      <!-- Side handle -->
+      <path d="M 160 200 C 120 200 120 290 160 300 L 160 270 C 138 265 138 225 160 220 Z" fill="#9a3412" />
+      <!-- Label -->
+      <rect x="180" y="240" width="140" height="120" rx="8" fill="#ffffff" />
+      <rect x="190" y="250" width="120" height="22" rx="4" fill="#ea580c" />
+      <text x="250" y="266" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#ffffff">OROMA GOLDEN</text>
+      <text x="250" y="308" text-anchor="middle" font-family="system-ui, sans-serif" font-size="28" font-weight="800" fill="#9a3412">2 LITRES</text>
+      <text x="250" y="335" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" font-weight="600" fill="#c2410c">PREMIUM RED PALM OIL</text>
+    </svg>

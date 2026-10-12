@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+      <rect width="500" height="500" fill="#fff7ed" />
+      <circle cx="250" cy="250" r="190" fill="#ffedd5" />
+      <!-- 5L Keg Body -->
+      <rect x="140" y="160" width="220" height="250" rx="20" fill="#c2410c" />
+      <!-- Top cap -->
+      <rect x="170" y="115" width="50" height="45" rx="5" fill="#f97316" />
+      <!-- Sturdy handle bridge -->
+      <path d="M 230 125 L 330 125 L 330 160 L 230 160 Z" fill="#9a3412" />
+      <path d="M 240 100 Q 280 80 320 100 L 320 125 L 240 125 Z" fill="#c2410c" />
+      <!-- Front Label -->
+      <rect x="165" y="210" width="170" height="150" rx="10" fill="#ffffff" />
+      <rect x="175" y="222" width="150" height="28" rx="6" fill="#ea580c" />
+      <text x="250" y="241" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#ffffff">NIGERIAN RED PALM OIL</text>
+      <text x="250" y="295" text-anchor="middle" font-family="system-ui, sans-serif" font-size="38" font-weight="900" fill="#9a3412">5 LITRES</text>
+      <text x="250" y="330" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#c2410c">KITCHEN KEG • 100% PURE</text>
+    </svg>

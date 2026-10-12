@@ -20,6 +20,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   cartQuantity,
 }) => {
   const [selectedQty, setSelectedQty] = useState<number>(1);
+  const [imageError, setImageError] = useState<boolean>(false);
 
   if (!product) return null;
 
@@ -56,11 +57,22 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 items-center">
             {/* Image container */}
             <div className="relative aspect-square bg-stone-50 rounded-2xl p-6 flex items-center justify-center border border-stone-100">
-              <img
-                src={product.imageUrl || '/api/uploads/sample_1l.svg'}
-                alt={product.name}
-                className="w-full h-full object-contain"
-              />
+              {!imageError ? (
+                <img
+                  src={product.imageUrl || '/api/uploads/sample_1l.svg'}
+                  alt={product.name}
+                  className="w-full h-full object-contain"
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-center p-4 bg-orange-50/60 rounded-xl border border-orange-100">
+                  <div className="w-14 h-14 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-2 font-black text-xl">
+                    ₦
+                  </div>
+                  <p className="text-sm font-bold text-stone-800">{product.name}</p>
+                  <span className="text-xs text-stone-500 mt-1">Photo pending re-upload</span>
+                </div>
+              )}
               <div className="absolute top-3 left-3">
                 <span className="px-3 py-1 text-xs font-bold uppercase rounded-full bg-orange-100 text-orange-800 border border-orange-200">
                   {product.category || 'Palm Oil'}
